@@ -11,7 +11,9 @@ import java.util.List;
 @Builder
 public class ResponseLogin {
     private String token;
+    private String userId;
     private String username;
+    private String userEmail;
     private List<String> favoriteGenres;
     private String role;
     private Integer httpCode;

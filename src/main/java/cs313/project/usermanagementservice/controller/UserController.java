@@ -81,4 +81,24 @@ public class UserController {
 
         return ResponseEntity.status(responseLogin.getHttpCode()).body(responseLogin);
     }
+
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Chat-bot response successfully", content =  @Content(
+                    mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = ResponseChatBot.class)))
+            ),
+            @ApiResponse(responseCode = "404", description ="User not found"),
+            @ApiResponse(responseCode = "500", description ="The error occurred while creating the otp"),
+    })
+    @PostMapping("/chat-bot")
+    public ResponseEntity<?> chatBot(@RequestBody RequestChat requestChat) {
+
+        ResponseChatBot response = userServiceImpl.chatBot(requestChat);
+
+       if (response.getHttpCode() != 202) {
+           return ResponseEntity.status(response.getHttpCode()).body(response.getErrMessage());
+       }
+
+       return ResponseEntity.status(HttpStatus.ACCEPTED).body(response.getResponse());
+    }
 }

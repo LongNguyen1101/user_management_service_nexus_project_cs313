@@ -40,7 +40,6 @@ public class UserController {
                 .body(responseRegistration);
     }
 
-
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Verify successfully"),
             @ApiResponse(responseCode = "403", description = "Wrong OTP || OTP has expired"),
@@ -100,5 +99,17 @@ public class UserController {
        }
 
        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response.getResponse());
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<?> getHistory(String userId) {
+
+        ResponseQA response = userServiceImpl.getHistory(userId);
+
+        if (response.getHttpCode() != 200) {
+            return ResponseEntity.status(response.getHttpCode()).body(response.getErrMessage());
+        }
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response.getQuestionAndAnswerList());
     }
 }

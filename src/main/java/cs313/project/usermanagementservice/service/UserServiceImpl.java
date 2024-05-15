@@ -161,16 +161,17 @@ public class UserServiceImpl implements IUserService {
             List<QuestionAndAnswer> questionAndAnswers = new ArrayList<>();
 
             for (ChatHistory chatHistory : chatHistories) {
-                QuestionAndAnswer questionAndAnswer = new QuestionAndAnswer();
-                questionAndAnswer.setQuestion(chatHistory.getQuestion());
-                questionAndAnswer.setAnswer(chatHistory.getAnswer());
+                QuestionAndAnswer questionAndAnswer = QuestionAndAnswer.builder()
+                        .question(chatHistory.getQuestion())
+                        .answer(chatHistory.getAnswer())
+                        .build();
                 questionAndAnswers.add(questionAndAnswer);
             }
 
             return callChatBotApi(RequestToChatBotService.builder()
                     .question(question)
                     .history(questionAndAnswers)
-                    .build());
+                    .build(), user);
         }
 
         return ResponseChatBot.builder()
@@ -179,7 +180,46 @@ public class UserServiceImpl implements IUserService {
                 .build();
     }
 
-    private ResponseChatBot callChatBotApi(RequestToChatBotService request) {
+    @Override
+    public ResponseQA getHistory(String userId) {
+        try {
+            Optional<User> userOptional = userRepository.findById(userId);
+
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+
+                List<QuestionAndAnswer> questionAndAnswerList = new ArrayList<>();
+                List<ChatHistory> chatHistories = chatRepository.findByUser(user);
+
+                for (ChatHistory chat : chatHistories) {
+                    QuestionAndAnswer questionAndAnswer = QuestionAndAnswer.builder()
+                            .question(chat.getQuestion())
+                            .answer(chat.getAnswer())
+                            .build();
+
+                    questionAndAnswerList.add(questionAndAnswer);
+                }
+
+                return ResponseQA.builder()
+                        .questionAndAnswerList(questionAndAnswerList)
+                        .httpCode(200)
+                        .build();
+            }
+
+            return ResponseQA.builder()
+                    .httpCode(404)
+                    .errMessage("User not found")
+                    .build();
+
+        } catch (Exception e) {
+            return ResponseQA.builder()
+                    .httpCode(500)
+                    .errMessage(e.getMessage())
+                    .build();
+        }
+    }
+
+    private ResponseChatBot callChatBotApi(RequestToChatBotService request, User user) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -190,12 +230,19 @@ public class UserServiceImpl implements IUserService {
             String apiUrl = "http://3.25.121.144/api/chatbot/chat";
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(apiUrl, requestEntity, String.class);
 
-            String responseBody = responseEntity.getBody();
+            String responseBody = parseResponse((responseEntity.getBody()));
+
+            chatRepository.save(ChatHistory.builder()
+                    .answer(responseBody)
+                    .question(request.getQuestion())
+                    .user(user)
+                    .build());
 
             return ResponseChatBot.builder()
-                    .response(parseResponse(responseBody))
+                    .response(responseBody)
                     .httpCode(202)
                     .build();
+
         } catch (Exception e) {
             return ResponseChatBot.builder()
                     .httpCode(500)

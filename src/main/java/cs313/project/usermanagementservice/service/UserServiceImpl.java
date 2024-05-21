@@ -227,7 +227,7 @@ public class UserServiceImpl implements IUserService {
 
             HttpEntity<String> requestEntity = new HttpEntity<>(json, headers);
 
-            String apiUrl = "http://3.25.121.144/api/chatbot/chat";
+            String apiUrl = "http://3.25.121.144/api/chatbot/chatMrRAG";
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(apiUrl, requestEntity, String.class);
 
             String responseBody = parseResponse((responseEntity.getBody()));
